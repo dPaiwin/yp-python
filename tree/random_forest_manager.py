@@ -12,24 +12,22 @@ import numpy as np
 import pickle
 from tqdm import tqdm
 
-from pymorph_manager import AllTagSet, PyMorphManager
+from pymorph_manager import PyMorphManager
 
 
 def extract_words(text):
     return re.findall(r'[\-а-яёА-ЯЁa-zA-Z]+', text.lower())
 
 
-class Banker:
-    def __init__(self, args):
-        self.tag_set = AllTagSet()
-        self.morpher = PyMorphManager(self.tag_set)
-        args['Morpher'] = self.morpher
-
+class RandomForestManager:
+    def __init__(self):
+        self.morpher = PyMorphManager()
         self.types = {}
 
         self.rfc = RandomForestClassifier(
-            n_estimators=130,  # best=100
-            random_state=46568781)
+            n_estimators=130,
+            random_state=46568781
+        )
 
     def get_tfidf_features(self, sentence):
         """sentence is a str"""
@@ -119,9 +117,10 @@ class Banker:
 
         texts = []
         for type_id in self.types:
+            words = []
             for q in tqdm(list(filter(lambda q: q['type id'] == type_id, self.dataset)), desc='Creating tfidf'):
-                words = extract_words(q['text'])
-                texts.append(' '.join(self.morpher.get_normal_form(words)))
+                words += extract_words(q['text'])
+            texts.append(' '.join(self.morpher.get_normal_form(words)))
 
         self.tfidf_vect.fit(texts)
         self.char_feat = CharFeaturer([q['text'].lower() for q in self.dataset])
@@ -202,13 +201,13 @@ class Banker:
 
 
 class CharFeaturer:
-    def __init__(self, sentences, modifier=None):
+    def __init__(self, sentences):
 
         self.ALPHABET = 'абвгдежзийклмнопрстуфхцчшщъыьэюя'
         self.ALPHABET_SIZE = 33
         self.FEAT_CHR_MIN = 10
         self.FEAT_CHR_MAX = 2500
-        self.FEAT_CHR_RANGE = [3]
+        self.FEAT_CHR_RANGE = 3
 
         self.ch_codes = dict((ch, self.ALPHABET.index(ch)) for ch in self.ALPHABET)
         self.ch_codes['ё'] = self.ch_codes['е']
@@ -228,20 +227,19 @@ class CharFeaturer:
         """
         word = '<{}>'.format(word)
         res = []
-        for length in self.FEAT_CHR_RANGE:  # для всех полиграмм указанных длин
-            for i in range(length - 1, len(word)):  # по диапазонам длины полиграммы
-                counter = length - 1  # модификатор индекса
-                output = 0
-                while counter >= 0:  # с первой буквы до последней буквы диапазона
-                    output += self.get_ord(word[i - counter]) * (self.ALPHABET_SIZE ** counter)
-                    counter -= 1
+        for i in range(self.FEAT_CHR_RANGE - 1, len(word)):  # по диапазонам длины полиграммы
+            counter = self.FEAT_CHR_RANGE - 1  # модификатор индекса
+            output = 0
+            while counter >= 0:  # с первой буквы до последней буквы диапазона
+                output += self.get_ord(word[i - counter]) * (self.ALPHABET_SIZE ** counter)
+                counter -= 1
 
-                res.append(output)
+            res.append(output)
 
         return res
 
     def get_hash_ch(self, sentences):
-        f = np.zeros(self.ALPHABET_SIZE ** max(self.FEAT_CHR_RANGE))
+        f = np.zeros(self.ALPHABET_SIZE ** self.FEAT_CHR_RANGE)
         for sentence in tqdm(sentences, desc='Generating char embs'):
             words = extract_words(sentence)
             for word in words:

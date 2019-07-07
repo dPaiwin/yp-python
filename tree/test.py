@@ -1,7 +1,7 @@
 import random
 import argparse
 
-from banker import Banker
+from random_forest_manager import RandomForestManager
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument('--loadpath', type=str, default='model', help='a folder with all the models')
@@ -14,14 +14,11 @@ args = {
     'testfile': parsed.testfile,
 }
 
-banker = Banker(args)
-banker.pickle_load(args['loadpath'])
+rand_forest_er = RandomForestManager()
+rand_forest_er.pickle_load(args['loadpath'])
 
-data = banker.load_dicts(args['testfile'])
-
-random.shuffle(data)
-data = data[:200]
-result = banker.predict(item['text'] for item in data)
+data = rand_forest_er.load_dicts(args['testfile'])
+result = rand_forest_er.predict(item['text'] for item in data)
 
 cnt = 0
 for d, r in zip(data, result):
@@ -32,5 +29,5 @@ print(cnt)
 print(cnt/len(data))
 
 while True:
-    print(banker.predict([input('> ')])[0])
+    print(rand_forest_er.predict([input('> ')])[0])
 

@@ -2,7 +2,7 @@ import argparse
 import os
 from os.path import normpath
 
-from trainer import Trainer
+from random_forest_manager import RandomForestManager
 
 
 arg_parser = argparse.ArgumentParser()
@@ -24,5 +24,6 @@ args['savepath'] = normpath(args['savepath']) + args['savepostfix']
 if not os.path.exists(args['savepath']):
     os.makedirs(args['savepath'])
 
-trainer = Trainer(args)
-trainer.start_train()
+rand_forest_er = RandomForestManager()
+rand_forest_er.train(args['trainfile'])
+rand_forest_er.pickle_save(args['savepath'])
