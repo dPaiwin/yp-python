@@ -169,15 +169,13 @@ class Banker:
             return self.rfc.score(x_test, y_test)
 
     @staticmethod
-    def load_dicts(trainfile, limit=None):
+    def load_dicts(trainfile):
         result = []
-        print('Loading file "%s"' % trainfile)
+        print('Loading file {}'.format(trainfile))
         w = px.load_workbook(trainfile)
         for sheet_name in w.get_sheet_names():
             sheet = w[sheet_name]
             for i_row, row in enumerate(sheet.rows):
-                if limit is not None and i_row > limit:
-                    break
                 type_id = int(row[0].value)
                 line = str(row[1].value)
                 if line == '':
